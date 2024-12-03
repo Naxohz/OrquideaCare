@@ -1,74 +1,75 @@
 package controller;
 
-import com.toedter.calendar.JDateChooser;
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 import model.BaseDatos;
 import view.DashboardView;
 
 public class CalendarioController {
     private DashboardView vista;
-    private DefaultTableModel modeloCalendario;
+    private Timer timer;
 
     public CalendarioController(DashboardView vista) {
         this.vista = vista;
-
-        modeloCalendario = (DefaultTableModel) vista.tablaCalendario.getModel();
-        vista.btnAgregarEvento.addActionListener(e -> agregarEvento());
+        timer = new Timer();
+        // Iniciar la verificación de eventos de riego cada minuto
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                verificarEventosDeRiego();
+            }
+        }, 0, 60 * 1000); // Verificar cada 60 segundos
     }
 
-    private void agregarEvento() {
+    private void verificarEventosDeRiego() {
         try {
-            JDateChooser calendario = new JDateChooser();
-            JTextField txtHora = new JTextField();
-            JTextArea txtDescripcion = new JTextArea();
+            // Obtener la fecha y hora actuales
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+            String fechaHoraActual = sdf.format(new Date());  // Formato: 2024-12-01 14:30
 
-            Object[] campos = {
-                "Fecha:", calendario,
-                "Hora (HH:mm):", txtHora,
-                "Descripción:", txtDescripcion
-            };
+            // Consulta para obtener los eventos de riego
+            String sql = "SELECT fecha_riego, hora_riego, descripcion FROM calendario_riego";
+            Connection conn = BaseDatos.conectar();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            var rs = stmt.executeQuery();
 
-            int opcion = JOptionPane.showConfirmDialog(null, campos, "Agregar Evento", JOptionPane.OK_CANCEL_OPTION);
-            if (opcion == JOptionPane.OK_OPTION) {
-                Date fecha = calendario.getDate();
-                String hora = txtHora.getText();
-                String descripcion = txtDescripcion.getText();
+            while (rs.next()) {
+                String fechaRiego = rs.getString("fecha_riego");
+                String horaRiego = rs.getString("hora_riego");
+                String descripcion = rs.getString("descripcion");
 
-                if (fecha == null || hora.isEmpty() || descripcion.isEmpty()) {
-                    JOptionPane.showMessageDialog(null, "Todos los campos son obligatorios.");
-                    return;
+                // Concatenar la fecha y la hora para compararla con la fecha/hora actual
+                String eventoRiego = fechaRiego + " " + horaRiego;
+
+                // Si la fecha y hora del evento coinciden con la fecha y hora actuales
+                if (eventoRiego.equals(fechaHoraActual)) {
+                    mostrarNotificacionRiego(descripcion); // Mostrar notificación con descripción
                 }
-
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-                String fechaStr = sdf.format(fecha);
-
-                // Insertar en la base de datos
-                Connection conn = BaseDatos.conectar();
-                String sql = "INSERT INTO calendario_riego (fecha_riego, hora_riego, descripcion) VALUES (?, ?, ?)";
-                PreparedStatement stmt = conn.prepareStatement(sql);
-                stmt.setString(1, fechaStr);
-                stmt.setString(2, hora);
-                stmt.setString(3, descripcion);
-                stmt.executeUpdate();
-
-                // Agregar al modelo de la tabla
-                modeloCalendario.addRow(new Object[]{fechaStr, hora, descripcion});
-                JOptionPane.showMessageDialog(null, "Evento agregado correctamente.");
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Error al agregar el evento: " + ex.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void mostrarNotificacionRiego(String descripcion) {
+        // Mostrar un cuadro de diálogo con la notificación
+        SwingUtilities.invokeLater(() -> {
+            JOptionPane.showMessageDialog(vista, 
+                "¡Es hora de regar las orquídeas!\nDescripción: " + descripcion, 
+                "Notificación de Riego", 
+                JOptionPane.INFORMATION_MESSAGE);
+        });
+    }
+
+    // Detener la verificación de eventos cuando ya no sea necesario
+    public void detenerVerificacion() {
+        if (timer != null) {
+            timer.cancel();
         }
     }
 }
-
-
-
-
-
-

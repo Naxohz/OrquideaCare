@@ -29,6 +29,7 @@ public class DashboardController {
         // Configurar acciones de los botones
         vista.btnAplicarIntervalo.addActionListener(e -> aplicarIntervalo());
         vista.btnAgregarEvento.addActionListener(e -> agregarEvento());
+        vista.btnEliminarEvento.addActionListener(e -> eliminarEvento());
         vista.btnVerHistorial.addActionListener(e -> cargarHistorialHumedad());
 
         // Cargar datos iniciales
@@ -112,11 +113,14 @@ public class DashboardController {
             // Limpiar la tabla antes de cargar nuevos datos
             modeloCalendario.setRowCount(0);
 
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
             while (rs.next()) {
-                String fecha = rs.getString("fecha_riego");
+                Date fecha = rs.getDate("fecha_riego");
+                String fechaFormateada = dateFormat.format(fecha);
                 String hora = rs.getString("hora_riego");
                 String descripcion = rs.getString("descripcion");
-                modeloCalendario.addRow(new Object[]{fecha, hora, descripcion});
+                modeloCalendario.addRow(new Object[]{fechaFormateada, hora, descripcion});
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -136,25 +140,34 @@ public class DashboardController {
                 "Descripción:", txtDescripcion
             };
 
-            int opcion = JOptionPane.showConfirmDialog(vista, campos, "Agregar Evento", JOptionPane.OK_CANCEL_OPTION);
+            int opcion = JOptionPane.showConfirmDialog(vista, campos, "Agregar Evento", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
             if (opcion == JOptionPane.OK_OPTION) {
                 Date fecha = calendario.getDate();
                 String hora = txtHora.getText();
                 String descripcion = txtDescripcion.getText();
 
                 if (fecha == null || hora.isEmpty() || descripcion.isEmpty()) {
-                    JOptionPane.showMessageDialog(vista, "Todos los campos son obligatorios.");
+                    JOptionPane.showMessageDialog(vista, "Todos los campos son obligatorios.", "Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
                 if (!hora.matches("\\d{2}:\\d{2}")) {
-                    JOptionPane.showMessageDialog(vista, "El formato de la hora debe ser HH:mm.");
+                    JOptionPane.showMessageDialog(vista, "El formato de la hora debe ser HH:mm.", "Error", JOptionPane.ERROR_MESSAGE);
                     return;
+                }
+
+                // Eliminar los segundos en la hora
+                if (hora.length() == 5) {
+                    // Si la hora está en formato HH:mm, no hacemos nada.
+                } else {
+                    // Si el formato tiene segundos, eliminamos los segundos
+                    hora = hora.substring(0, 5);
                 }
 
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
                 String fechaStr = sdf.format(fecha);
 
+                // Insertar en la base de datos
                 Connection conn = BaseDatos.conectar();
                 String sql = "INSERT INTO calendario_riego (fecha_riego, hora_riego, descripcion) VALUES (?, ?, ?)";
                 PreparedStatement stmt = conn.prepareStatement(sql);
@@ -169,6 +182,33 @@ public class DashboardController {
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(vista, "Error al agregar el evento: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void eliminarEvento() {
+        int filaSeleccionada = vista.tablaCalendario.getSelectedRow();
+        if (filaSeleccionada == -1) {
+            JOptionPane.showMessageDialog(vista, "Por favor, seleccione un evento para eliminar.", "Advertencia", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int confirmacion = JOptionPane.showConfirmDialog(vista, "¿Está seguro de que desea eliminar este evento?", "Confirmar", JOptionPane.YES_NO_OPTION);
+        if (confirmacion == JOptionPane.YES_OPTION) {
+            try (Connection conn = BaseDatos.conectar()) {
+                String fecha = (String) modeloCalendario.getValueAt(filaSeleccionada, 0);
+                String hora = (String) modeloCalendario.getValueAt(filaSeleccionada, 1);
+                String sql = "DELETE FROM calendario_riego WHERE fecha_riego = ? AND hora_riego = ?";
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                stmt.setString(1, fecha);
+                stmt.setString(2, hora);
+                stmt.executeUpdate();
+
+                modeloCalendario.removeRow(filaSeleccionada);
+                JOptionPane.showMessageDialog(vista, "Evento eliminado correctamente.");
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(vista, "Error al eliminar el evento: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
@@ -189,7 +229,7 @@ public class DashboardController {
                 double humedad = rs.getDouble("humedad");
                 double temperatura = rs.getDouble("temperatura");
 
-                modeloHistorial.addRow(new Object[]{fecha, hora, String.format("%.2f%%", humedad), String.format("%.2f°C", temperatura)});
+                modeloHistorial.addRow(new Object[]{fecha, hora, String.format("%.2f%%", humedad), String.format("%.2f°C", temperatura)}); 
             }
 
             JOptionPane.showMessageDialog(vista, "Historial de humedad cargado correctamente.");
@@ -230,15 +270,3 @@ public class DashboardController {
         JOptionPane.showMessageDialog(vista, "Intervalo actualizado a " + seleccion + ".");
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-

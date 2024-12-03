@@ -47,11 +47,3 @@ public class LoginView extends JFrame {
         add(panelBotones, BorderLayout.SOUTH);
     }
 }
-
-
-
-
-
-
-
-

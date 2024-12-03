@@ -2,6 +2,7 @@ package view;
 
 import javax.swing.*;
 import java.awt.*;
+import javax.swing.border.LineBorder;
 
 public class PerfilView extends JPanel {
     public JLabel lblNombre, lblCorreo; // Etiquetas para mostrar los datos
@@ -9,40 +10,56 @@ public class PerfilView extends JPanel {
 
     public PerfilView(String nombre, String correo) {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-
-        // Título
-        JLabel lblTitulo = new JLabel("Perfil del Agricultor");
-        lblTitulo.setFont(new Font("Arial", Font.BOLD, 16));
+        setBackground(new Color(153, 186, 146)); // Fondo suave
+        // Estilo para el Título
+        JLabel lblTitulo = new JLabel("Información del Perfil", JLabel.CENTER);
+        lblTitulo.setFont(new Font("Arial", Font.BOLD, 18));
         lblTitulo.setAlignmentX(CENTER_ALIGNMENT);
 
-        // Datos del perfil
+        // Panel para mostrar los datos
+        JPanel panelDatos = new JPanel();
+        panelDatos.setLayout(new GridLayout(2, 1, 5, 5)); // Para nombre y correo
+        panelDatos.setBackground(new Color(153, 186, 146));;
+
         lblNombre = new JLabel("Nombre: " + nombre);
+        lblNombre.setFont(new Font("Arial", Font.PLAIN, 14));
         lblCorreo = new JLabel("Correo: " + correo);
+        lblCorreo.setFont(new Font("Arial", Font.PLAIN, 14));
 
-        lblNombre.setAlignmentX(CENTER_ALIGNMENT);
-        lblCorreo.setAlignmentX(CENTER_ALIGNMENT);
+        panelDatos.add(lblNombre);
+        panelDatos.add(lblCorreo);
 
-        // Botón para editar
+        // Panel para botones
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10)); // Espaciado entre botones
+        panelBotones.setBackground(new Color(153, 186, 146));;
+        
+        // Botón Editar Perfil
         btnEditar = new JButton("Editar Perfil");
-        btnEditar.setAlignmentX(CENTER_ALIGNMENT);
+        btnEditar.setPreferredSize(new Dimension(100, 30)); // Tamaño ajustado
+        btnEditar.setFont(new Font("Arial", Font.PLAIN, 12));
+        btnEditar.setBackground(new Color(34, 70, 27)); // Verde suave
+        btnEditar.setForeground(Color.WHITE);
+        btnEditar.setFocusPainted(false);
+        btnEditar.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Botón para cerrar sesión
+        // Botón Cerrar Sesión
         btnCerrarSesion = new JButton("Cerrar Sesión");
-        btnCerrarSesion.setAlignmentX(CENTER_ALIGNMENT);
+        btnCerrarSesion.setPreferredSize(new Dimension(120, 30)); // Tamaño ajustado
+        btnCerrarSesion.setFont(new Font("Arial", Font.PLAIN, 12));
+        btnCerrarSesion.setBackground(new Color(68, 18, 18)); // Rojo suave
+        btnCerrarSesion.setForeground(Color.WHITE);
+        btnCerrarSesion.setFocusPainted(false);
+        btnCerrarSesion.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Agregar componentes al panel
+        // Añadir los botones al panel
+        panelBotones.add(btnEditar);
+        panelBotones.add(btnCerrarSesion);
+
+        // Añadir componentes al panel principal
         add(lblTitulo);
-        add(Box.createRigidArea(new Dimension(0, 10))); // Espaciado
-        add(lblNombre);
-        add(lblCorreo);
-        add(Box.createRigidArea(new Dimension(0, 20))); // Espaciado
-        add(btnEditar);
-        add(Box.createRigidArea(new Dimension(0, 10))); // Espaciado
-        add(btnCerrarSesion);
+        add(Box.createRigidArea(new Dimension(0, 1))); // Espaciado
+        add(panelDatos);
+        add(Box.createRigidArea(new Dimension(0, 1))); // Espaciado
+        add(panelBotones);
     }
 }
-
-
-
-
-
