@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import model.BaseDatos;
 import view.DashboardView;
@@ -128,62 +129,74 @@ public class DashboardController {
         }
     }
 
-    private void agregarEvento() {
-        try {
-            JDateChooser calendario = new JDateChooser();
-            JTextField txtHora = new JTextField();
-            JTextArea txtDescripcion = new JTextArea();
+private void agregarEvento() {
+    try {
+        JDateChooser calendario = new JDateChooser();
+        JTextField txtHora = new JTextField();
+        JTextArea txtDescripcion = new JTextArea();
 
-            Object[] campos = {
-                "Fecha:", calendario,
-                "Hora (HH:mm):", txtHora,
-                "Descripción:", txtDescripcion
-            };
+        Object[] campos = {
+            "Fecha:", calendario,
+            "Hora (HH:mm):", txtHora,
+            "Descripción:", txtDescripcion
+        };
 
-            int opcion = JOptionPane.showConfirmDialog(vista, campos, "Agregar Evento", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-            if (opcion == JOptionPane.OK_OPTION) {
-                Date fecha = calendario.getDate();
-                String hora = txtHora.getText();
-                String descripcion = txtDescripcion.getText();
+        int opcion = JOptionPane.showConfirmDialog(vista, campos, "Agregar Evento", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (opcion == JOptionPane.OK_OPTION) {
+            Date fecha = calendario.getDate();
+            String hora = txtHora.getText();
+            String descripcion = txtDescripcion.getText();
 
-                if (fecha == null || hora.isEmpty() || descripcion.isEmpty()) {
-                    JOptionPane.showMessageDialog(vista, "Todos los campos son obligatorios.", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                if (!hora.matches("\\d{2}:\\d{2}")) {
-                    JOptionPane.showMessageDialog(vista, "El formato de la hora debe ser HH:mm.", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                // Eliminar los segundos en la hora
-                if (hora.length() == 5) {
-                    // Si la hora está en formato HH:mm, no hacemos nada.
-                } else {
-                    // Si el formato tiene segundos, eliminamos los segundos
-                    hora = hora.substring(0, 5);
-                }
-
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-                String fechaStr = sdf.format(fecha);
-
-                // Insertar en la base de datos
-                Connection conn = BaseDatos.conectar();
-                String sql = "INSERT INTO calendario_riego (fecha_riego, hora_riego, descripcion) VALUES (?, ?, ?)";
-                PreparedStatement stmt = conn.prepareStatement(sql);
-                stmt.setString(1, fechaStr);
-                stmt.setString(2, hora);
-                stmt.setString(3, descripcion);
-                stmt.executeUpdate();
-
-                modeloCalendario.addRow(new Object[]{fechaStr, hora, descripcion});
-                JOptionPane.showMessageDialog(vista, "Evento agregado correctamente.");
+            if (fecha == null || hora.isEmpty() || descripcion.isEmpty()) {
+                JOptionPane.showMessageDialog(vista, "Todos los campos son obligatorios.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(vista, "Error al agregar el evento: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+
+            if (!hora.matches("\\d{2}:\\d{2}")) {
+                JOptionPane.showMessageDialog(vista, "El formato de la hora debe ser HH:mm.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validar que la hora no esté en el pasado
+            Calendar fechaIngresada = Calendar.getInstance();
+            fechaIngresada.setTime(fecha);
+
+            String[] partesHora = hora.split(":");
+            int horaIngresada = Integer.parseInt(partesHora[0]);
+            int minutoIngresado = Integer.parseInt(partesHora[1]);
+
+            fechaIngresada.set(Calendar.HOUR_OF_DAY, horaIngresada);
+            fechaIngresada.set(Calendar.MINUTE, minutoIngresado);
+            fechaIngresada.set(Calendar.SECOND, 0);
+
+            Date ahora = new Date(); // Hora y fecha actuales
+            if (fechaIngresada.getTime().before(ahora)) {
+                JOptionPane.showMessageDialog(vista, "La fecha y hora no pueden ser en el pasado. Por favor, ingrese un horario válido.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Formatear la fecha para almacenar
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            String fechaStr = sdf.format(fecha);
+
+            // Insertar en la base de datos
+            Connection conn = BaseDatos.conectar();
+            String sql = "INSERT INTO calendario_riego (fecha_riego, hora_riego, descripcion) VALUES (?, ?, ?)";
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, fechaStr);
+            stmt.setString(2, hora);
+            stmt.setString(3, descripcion);
+            stmt.executeUpdate();
+
+            modeloCalendario.addRow(new Object[]{fechaStr, hora, descripcion});
+            JOptionPane.showMessageDialog(vista, "Evento agregado correctamente.");
         }
+    } catch (Exception e) {
+        e.printStackTrace();
+        JOptionPane.showMessageDialog(vista, "Error al agregar el evento: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
     }
+}
+
 
     private void eliminarEvento() {
         int filaSeleccionada = vista.tablaCalendario.getSelectedRow();
@@ -239,10 +252,14 @@ public class DashboardController {
         }
     }
 
+    // Variable para almacenar el intervalo actual
+    private long intervaloActual = -1;
+
     private void aplicarIntervalo() {
         String seleccion = (String) vista.cmbIntervalo.getSelectedItem();
         long intervalo;
 
+        // Determinar el valor del intervalo seleccionado
         switch (seleccion) {
             case "1 minuto":
                 intervalo = 1 * 60 * 1000;
@@ -266,7 +283,18 @@ public class DashboardController {
                 intervalo = 5 * 60 * 1000; // Valor por defecto
         }
 
+        // Verificar si el intervalo ya está aplicado
+        if (intervalo == intervaloActual) {
+            JOptionPane.showMessageDialog(vista, 
+                "El intervalo seleccionado ya está en uso. Por favor, selecciona un intervalo diferente.", 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
+            return; // Salir del método
+        }
+
+        // Actualizar el intervalo
         humedadController.iniciarRegistroAutomatico(vista, intervalo);
+        intervaloActual = intervalo; // Guardar el nuevo intervalo actual
         JOptionPane.showMessageDialog(vista, "Intervalo actualizado a " + seleccion + ".");
     }
 }

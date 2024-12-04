@@ -10,7 +10,7 @@ public class PerfilView extends JPanel {
 
     public PerfilView(String nombre, String correo) {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setBackground(new Color(153, 186, 146)); // Fondo suave
+        setBackground(new Color(111, 155, 122)); // Fondo suave
         // Estilo para el Título
         JLabel lblTitulo = new JLabel("Información del Perfil", JLabel.CENTER);
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 18));
@@ -19,7 +19,7 @@ public class PerfilView extends JPanel {
         // Panel para mostrar los datos
         JPanel panelDatos = new JPanel();
         panelDatos.setLayout(new GridLayout(2, 1, 5, 5)); // Para nombre y correo
-        panelDatos.setBackground(new Color(153, 186, 146));;
+        panelDatos.setBackground(new Color(111, 155, 122));
 
         lblNombre = new JLabel("Nombre: " + nombre);
         lblNombre.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -31,7 +31,7 @@ public class PerfilView extends JPanel {
 
         // Panel para botones
         JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10)); // Espaciado entre botones
-        panelBotones.setBackground(new Color(153, 186, 146));;
+        panelBotones.setBackground(new Color(111, 155, 122));;
         
         // Botón Editar Perfil
         btnEditar = new JButton("Editar Perfil");

@@ -21,12 +21,13 @@ public class DashboardView extends JFrame {
         setSize(800, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
+        setLocationRelativeTo(null);
 
         // Panel Principal
         JPanel panelPrincipal = new JPanel();
         panelPrincipal.setLayout(new BorderLayout(10, 10));
         panelPrincipal.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        panelPrincipal.setBackground(new Color(153, 186, 146));
+        panelPrincipal.setBackground(new Color(111, 155, 122));
         add(panelPrincipal, BorderLayout.CENTER);
 
         // Panel Izquierdo: Perfil del Agricultor
@@ -34,14 +35,14 @@ public class DashboardView extends JFrame {
         panelPerfil.setLayout(new BoxLayout(panelPerfil, BoxLayout.Y_AXIS));
         panelPerfil.setBorder(BorderFactory.createTitledBorder("Perfil del Agricultor"));
         panelPerfil.setPreferredSize(new Dimension(300, 0));
-        panelPerfil.setBackground(new Color(153, 186, 146));
+        panelPerfil.setBackground(new Color(111, 155, 122));
         panelPrincipal.add(panelPerfil, BorderLayout.WEST);
 
         // Panel Central: Mostrar Humedad, Temperatura y Intervalo
         JPanel panelInfoOrquideas = new JPanel();
         panelInfoOrquideas.setLayout(new GridLayout(3, 1, 5, 5));
         panelInfoOrquideas.setBorder(BorderFactory.createTitledBorder("Información de las Orquídeas"));
-        panelInfoOrquideas.setBackground(new Color(153, 186, 146));
+        panelInfoOrquideas.setBackground(new Color(111, 155, 122));
         panelPrincipal.add(panelInfoOrquideas, BorderLayout.CENTER);
 
         lblHumedadActual = new JLabel("Humedad Actual: Calculando...", JLabel.CENTER);
@@ -54,7 +55,7 @@ public class DashboardView extends JFrame {
 
         // Panel para seleccionar intervalo
         JPanel panelIntervalo = new JPanel(new FlowLayout());
-        panelIntervalo.setBackground(new Color(153, 186, 146));
+        panelIntervalo.setBackground(new Color(111, 155, 122));
         JLabel lblIntervalo = new JLabel("Actualizar cada:");
         cmbIntervalo = new JComboBox<>(new String[]{"1 minuto", "3 minutos", "5 minutos", "10 minutos", "30 minutos", "1 hora"});
         btnAplicarIntervalo = new JButton("Aplicar");
@@ -73,7 +74,7 @@ public class DashboardView extends JFrame {
 
         // Calendario de Riego
         JPanel panelCalendario = new JPanel(new BorderLayout());
-        panelCalendario.setBackground(new Color(153, 186, 146)); // Fondo verde claro
+        panelCalendario.setBackground(new Color(111, 155, 122)); // Fondo verde claro
         panelCalendario.setBorder(BorderFactory.createTitledBorder("Calendario de Riego"));
         modeloCalendario = new DefaultTableModel(new String[]{"Fecha", "Hora", "Descripción"}, 0);
         tablaCalendario = new JTable(modeloCalendario);
@@ -93,7 +94,7 @@ public class DashboardView extends JFrame {
 
         // Historial de Humedad
         JPanel panelHistorial = new JPanel(new BorderLayout());
-        panelHistorial.setBackground(new Color(153, 186, 146)); // Fondo verde claro
+        panelHistorial.setBackground(new Color(111, 155, 122)); // Fondo verde claro
         panelHistorial.setBorder(BorderFactory.createTitledBorder("Historial de Humedad y Temperatura"));
         modeloHistorial = new DefaultTableModel(new String[]{"Fecha", "Hora", "Humedad", "Temperatura"}, 0);
         tablaHistorial = new JTable(modeloHistorial);
@@ -104,25 +105,25 @@ public class DashboardView extends JFrame {
         panelInferior.add(panelHistorial);
 
         // Estilo para el Panel Principal
-        panelInferior.setBackground(new Color(153, 186, 146));
+        panelInferior.setBackground(new Color(111, 155, 122));
 
         // Iniciar el temporizador para la actualización en tiempo real
         iniciarTemporizador();
     }
 
-    // Método para iniciar el temporizador que verifica la hora de riego cada minuto
+    // Iniciar el temporizador para la actualización en tiempo real
     private void iniciarTemporizador() {
         // Crea un hilo para introducir el retraso de 1 segundo al iniciar sesión
         new Thread(() -> {
             try {
                 // Retrasa la ejecución durante 1 segundo (1000 ms)
-                Thread.sleep(1000); 
+                Thread.sleep(1000);
 
                 // Después del retraso, verifica la hora de riego
                 verificarHoraDeRiego();  // Verifica al instante si es hora de riego
 
             } catch (InterruptedException e) {
-                e.printStackTrace();
+            e.printStackTrace();
             }
         }).start();
 
@@ -154,17 +155,17 @@ public class DashboardView extends JFrame {
                 int idEvento = rs.getInt("id");
                 String descripcion = rs.getString("descripcion");
 
-                mostrarNotificacionRiego(descripcion); // Mostrar la notificación al instante
-
-                // Después de mostrar la notificación, marcar el evento como notificado
+                // Marcar el evento como notificado antes de mostrar la notificación
                 actualizarNotificado(idEvento);
+
+                // Mostrar la notificación
+                mostrarNotificacionRiego(descripcion);
             }
 
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
     }
-
 
     // Método para actualizar la base de datos y marcar como notificado
     private void actualizarNotificado(int idEvento) {
@@ -182,13 +183,13 @@ public class DashboardView extends JFrame {
 
     // Método para mostrar la notificación de riego
     public void mostrarNotificacionRiego(String descripcion) {
-        // Mostrar solo el mensaje y la descripción del evento
         JOptionPane.showMessageDialog(this, 
             "¡Es hora de regar las orquídeas!\n\n" + 
             "Descripción: " + descripcion, 
             "Notificación de Riego", 
             JOptionPane.INFORMATION_MESSAGE);
     }
+
 
     public DefaultTableModel getModeloCalendario() {
         return modeloCalendario;
